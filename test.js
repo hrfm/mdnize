@@ -4,7 +4,7 @@ var md = new MDPick({
     //"base"          : "README.md",
     "out"           : "./test/README.md",
     "verbose"       : true,
-    "independently" : true
+    "writeFileName" : true
 });
 
 md.pick("test");
