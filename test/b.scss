@@ -1,0 +1,18 @@
+// --- using inline
+// @md ### this is b.scss markdown
+
+// --- using with block comment
+/**
+ * @md
+ * - listA
+ * - listB
+ * **bold**
+ * md@
+ */
+/*
+@md
+- listα
+- listβ
+**bold**
+md@
+*/
