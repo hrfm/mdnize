@@ -1,45 +1,17 @@
-## ../test/a.php
+mdpick
+---
 
-### this is a.php markdown
+## options
 
-- list1  
-- list2  
-  
-**bold text**
-
-## ../test/b.scss
-
-### this is b.scss markdown
-
-- listA  
-- listB  
-**bold**
-
-- listα  
-- listβ  
-**bold**
-
-## ../test/c.js
-
-### this is c.js markdown
-
-```js  
-// sum a b.  
-function(a,b){  
-	return a+b;  
-}  
 ```
+{
+	"startSymbol"   : "@md",       // 開始文字列.
+	"endSymbol"     : "md@",       // 終了文字列.
+	"out"           : "README.md", // 出力ファイル名.
+	"base"          : undefined,   // 元となるファイルを指定するかどうか.
+	"writeFileName" : true,        // ファイル名を出力するか. 文字列を指定した場合 その文字列を手前に差し込みます.
+	"independently" : false,       // true の場合 src を変更せずファイルだけ出力し次に回す.
+	"verbose"       : false        // 細かなログを出力するかどうか.
+}
 
-## ../test/test/a.php
-
-### this is a.php markdown
-
-- list1  
-- list2  
-  
-**bold text**
-
-<!-- @mdpick -->
-
-
-<!-- mdpick@ -->
+```
