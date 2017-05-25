@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Pick markdown text from codes.",
   "main": "index.js",
-  "bin":  "bin/mdpick",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
