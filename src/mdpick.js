@@ -180,7 +180,7 @@ module.exports = (function(){
 
 	/**
 	 * 結果をパースして文字列化する処理です.
-     * @mdpick[xxx] の記述法を拡張するなら
+     * @mdpick[xxx] の記述法を拡張するならここに記載する
      * 
      * @param result
      * @param output
@@ -190,19 +190,24 @@ module.exports = (function(){
     mdpick.prototype._parseResult = function( result, map, nest ){
         
         for( var key in result ){
-
+            
             var uri = nest.concat([key]).join("/");
             
-            var output = map[key];
-            if( !output ){
-                output = map[''];
+            output = map[''];
+            for( var pattern in map ){
+                if( pattern != '' ){
+                    regPattern = "^(\\.\\/)?" + pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    if( new RegExp(regPattern).test(uri) ){
+                        output = map[pattern];
+                        break;
+                    }
+                }
             }
             
             var type = typeof result[key];
             switch( type ) {
                 case "object" :
-                    nest = nest.concat([key]);
-                    this._parseResult( result[key], map, nest );
+                    this._parseResult( result[key], map, nest.concat([key]) );
                     break;
                 case "string" :
                     if( this.options.writeFileName === true ) {
@@ -231,19 +236,26 @@ module.exports = (function(){
      * @private
      */
     mdpick.prototype._createBuffer = function( str, map ){
+        
         for( var key in map ){
+            
             var open, regexp;
+            
             if( key == "" ){
                 open   = "<!-- mdpick: -->";
-                regexp = /<!\-\-\s@mdpick\s\-\->((.|\r|\n)+?)<!\-\-\smdpick@\s\-\->/mg;
+                regexp = /<!\-\-\smdpick:\s\-\->((.|\r|\n)+?)<!\-\-\s:mdpick\s\-\->/mg;
             }else{
                 open   = "<!-- mdpick["+key+"]: -->";
                 regexp = new RegExp("<!\\-\\-\\smdpick\\["+key+"\\]:\\s\\-\\->((.|\\r|\\n)+?)<!\\-\\-\\s:mdpick\\s\\-\\->","mg");
             }
             open += "\r\n\r\n";
+            
             str = str.replace( regexp, open + map[key].join("\r\n\r\n") + "\r\n\r\n<!-- :mdpick -->");
+            
         }
+        
         return new Buffer(str);
+        
     }
     
 	/**
@@ -295,10 +307,7 @@ module.exports = (function(){
             destString = "<!-- mdpick: -->\n\n<!-- :mdpick -->";
         }
         
-        var map = this._parseResult( result, destStringMap,[] );
-        console.log(map);
-        
-        var buffer = this._createBuffer( destString, map );
+        var buffer = this._createBuffer( destString, this._parseResult( result, destStringMap,[] ) );
         if( buffer ){
             fs.writeFile( path.resolve( ".", dest ), buffer.toString() );
         }

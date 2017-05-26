@@ -7,7 +7,7 @@ const args = process.argv.slice(2);
 
 // ---------------------------------------------
 
-var target = arg[0];
+var target = args[0];
 if( !target || target == ""){
 	target = ".";
 }

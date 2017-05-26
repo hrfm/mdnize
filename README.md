@@ -1,8 +1,17 @@
 テスト
 
-<!-- mdpick[c.js]: -->
+<!-- mdpick[test/test2]: -->
 
-# test/c.js
+## ./test/test2/test2.php
+
+### this is a.php markdown
+
+- list1  
+- list2  
+  
+**bold text**
+
+## ./test/test2/test3/test3.js
 
 ### this is c.js markdown
 
@@ -15,9 +24,34 @@ function(a,b){
 
 <!-- :mdpick -->
 
-<!-- mdpick[b.scss]: -->
+<!-- mdpick[test/test4]: -->
 
-# test/b.scss
+## ./test/test4/test4.scss
+
+### this is b.scss markdown
+
+- listA  
+- listB  
+**bold**
+
+- listα  
+- listβ  
+**bold**
+
+<!-- :mdpick -->
+
+<!-- mdpick: -->
+
+## ./test/a.php
+
+### this is a.php markdown
+
+- list1  
+- list2  
+  
+**bold text**
+
+## ./test/b.scss
 
 ### this is b.scss markdown
 
@@ -29,16 +63,15 @@ function(a,b){
 - listβ  
 **bold**
 
-# test/test2/test4/b.scss
+## ./test/c.js
 
-### this is b.scss markdown
+### this is c.js markdown
 
-- listA  
-- listB  
-**bold**
-
-- listα  
-- listβ  
-**bold**
+```js  
+// sum a b.  
+function(a,b){  
+	return a+b;  
+}  
+```
 
 <!-- :mdpick -->
