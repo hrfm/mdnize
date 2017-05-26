@@ -8,7 +8,8 @@
     var _regExp        = {};
     var _replaceRegExp = {};
     var _uncomment     = require("./uncomment.js");
-
+    var _startSymbol, _endSymbol;
+    
     /*
     @md
 
@@ -16,6 +17,9 @@
     */
     var Line = function( line, startSymbol, endSymbol, extension ){
 
+        _startSymbol = startSymbol;
+        _endSymbol   = endSymbol;
+        
         var uncmt  = _uncomment(extension);
 
         if( typeof _regExp[extension] === "undefined" ){
@@ -76,18 +80,18 @@
      * md@
      */
     Line.prototype.isStart = function(){
-        return this.marker && this.marker.indexOf("@") == 0;
+        return this.marker && this.marker == _startSymbol;
     }
-
+    
     /**
      * @md
      * ### isEnd
      * md@
      */
     Line.prototype.isEnd = function(){
-        return this.marker && this.marker.lastIndexOf("@") == this.marker.length-1;
+        return this.marker && this.marker == _endSymbol;
     }
-
+    
     /**
      * @md
      * ### isEnd

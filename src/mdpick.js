@@ -13,72 +13,94 @@ module.exports = (function(){
     
     // --------------------------------------------------------------------------------------
     // --- Module.
-    
+
+	/**
+	 * @class
+     * @type {module.exports}
+     */
     var mdpick = module.exports = function( options ){
         this.options = extend({
-            "startSymbol"   : "@md",       // 開始文字列.
-            "endSymbol"     : "md@",       // 終了文字列.
-            "out"           : "README.md", // 出力ファイル名.
-            "base"          : undefined,   // 元となるファイルを指定するかどうか.
-            "writeFileName" : true,        // ファイル名を出力するか. 文字列を指定した場合 その文字列を手前に差し込みます.
+            "startSymbol"   : "md:",       // 開始文字列.
+            "endSymbol"     : ":md",       // 終了文字列.
+            "writeFileName" : false,       // ファイル名を出力するか. 文字列を指定した場合 その文字列を手前に差し込みます.
             "verbose"       : false        // 細かなログを出力するかどうか.
         },options);
+    };
+    
+	/**
+     * 取得対象を調べ Markdown 文字列を抜き出し,ファイルを出力します.
+     * @param target    取得対象
+     * @param dest      出力ファイル
+     */
+    mdpick.prototype.pick = function( target, dest ){
+        var result = {};
+        this._pick( target, ".", result );
+        this._writeFile(dest,result);
+    };
+    
+    // --- PRIVATE
+    
+	/**
+	 * 取得対象を調べ Markdown 文字列を抜き出す処理の実際処理です.
+     * 対象がディレクトリの場合は、子ディレクトリに対しても再帰的に行います.
+     * 
+     * @param target    Markdown 文字列の取得対象のパス.
+     * @param dir       チェック中のディレクトリのパス.
+     * @param obj       取得した内容を保存するための Object.
+     * @private
+     */
+    mdpick.prototype._pick = function( target, dir, obj ){
         
-    };
-    
-    mdpick.prototype.pick = function( file ){
-        this._output = ["<!-- @mdpick -->"];
-        this._check(file,"./");
-        this._writeFile();
-    };
-    
-    // -------- PRIVATE ---------------------------------------------------------------------
-    
-    mdpick.prototype._check = function( file, dir ){
-        var uri  = path.resolve(dir+file);
+        var uri  = path.resolve( dir + "/" + target );
+        
+        // --- stat を調べ ディレクトリとファイルで処理を切り分ける.
+        
         var stat = fs.statSync(uri);
         if( stat.isDirectory() ){
+            obj[target] = {};
             var list = fs.readdirSync(uri);
             for (var i = 0; i < list.length; i++) {
-                this._check( list[i], dir+"/"+file + "/" );
+                this._pick( list[i], dir+"/"+target, obj[target] );
             }
         }else if( stat.isFile() ){
-            this._readFile(uri);
+            var output = this._readFile(uri);
+            if( output ){
+                obj[target] = output;
+            }
         }
-    }
-    
-    mdpick.prototype._readFile = function( uri, callback ){
+        
+    };
+
+	/**
+	 * ファイルを走査して Markdown を発見したらピックアップします.
+     * 
+     * @param uri
+     * @returns {*}
+     * @private
+     */
+    mdpick.prototype._readFile = function( uri ){
         
         var filename  = uri.substr( uri.lastIndexOf("/")+1, uri.length );
-        var extension = filename.substr( filename.lastIndexOf(".")+1, filename.length );
 
+        // --- markdown ファイルは無視する.
+        var extension = filename.substr( filename.lastIndexOf(".")+1, filename.length );
+        if( extension.toLowerCase() == "md" ){
+            return;
+        }
+        
         var basepath  = ( typeof this.options.base !== 'undefined' ) ? path.resolve('.',this.options.base) : path.resolve(__dirname);
         basepath = basepath.substr(0,basepath.lastIndexOf('/'));
         
-        // markdown は無視.
-        if( extension.toLowerCase() == "md" ){
-            if( callback ) callback();
-            return;
-        }
-
         // ------------------------------------------------------------------------
-        // --- Start
+        // --- Check Process Start.
         
         var picked = [];
         var lines  = fs.readFileSync(uri,'utf8').toString().split(/\r?\n/);
-
-        if( this.options.verbose == true ){
-            logger.log( "Processing " + uri );
-        }
-
-        // ファイル名の出力設定があった場合出力する.
         
-        if( this.options.writeFileName === true ){
-            picked.push( [ "## " + path.relative(basepath,uri) ] );
-        }else if( typeof options.writeFileName === "string" ){
-            picked.push( [ options.writeFileName + path.relative(basepath,uri) ] );
+        if( this.options.verbose == true ){
+            logger.log( "[Processing] " + uri );
         }
-
+        
         // ファイルの読み込み.
         
         for( var i=0,len=lines.length; i<len; i++ ){
@@ -149,64 +171,137 @@ module.exports = (function(){
             if( this.options.verbose == true ){
                 logger.log( "Pick from " + uri );
             }
-            this._output.push( picked.join("\r\n\r\n") );
+            return picked.join("\r\n\r\n");
         }
+        
+        return null;
         
     }
+
+	/**
+	 * 結果をパースして文字列化する処理です.
+     * @mdpick[xxx] の記述法を拡張するなら
+     * 
+     * @param result
+     * @param output
+     * @returns {*}
+     * @private
+     */
+    mdpick.prototype._parseResult = function( result, map, nest ){
+        
+        for( var key in result ){
+
+            var uri = nest.concat([key]).join("/");
+            
+            var output = map[key];
+            if( !output ){
+                output = map[''];
+            }
+            
+            var type = typeof result[key];
+            switch( type ) {
+                case "object" :
+                    nest = nest.concat([key]);
+                    this._parseResult( result[key], map, nest );
+                    break;
+                case "string" :
+                    if( this.options.writeFileName === true ) {
+                        output.push("## " + uri);
+                    }else if( typeof this.options.writeFileName === "string" ){
+                            output.push( this.options.writeFileName + " " + uri );
+                    }else{
+                        output.push( "<!-- " + uri + " -->" );
+                    }
+                    output.push( result[key] );
+                    break;
+            }
+            
+        }
+        
+        return map;
+        
+    }
+
+	/**
+     * 第一引数で指定した文字列の中に記載されている <!-- mdpick --> を元に
+     * 第二引数で指定したオブジェクトのキーと照らし合わせ, マッチしたものを置換します.
+     * 
+     * @param str
+     * @param map
+     * @private
+     */
+    mdpick.prototype._createBuffer = function( str, map ){
+        for( var key in map ){
+            var open, regexp;
+            if( key == "" ){
+                open   = "<!-- mdpick: -->";
+                regexp = /<!\-\-\s@mdpick\s\-\->((.|\r|\n)+?)<!\-\-\smdpick@\s\-\->/mg;
+            }else{
+                open   = "<!-- mdpick["+key+"]: -->";
+                regexp = new RegExp("<!\\-\\-\\smdpick\\["+key+"\\]:\\s\\-\\->((.|\\r|\\n)+?)<!\\-\\-\\s:mdpick\\s\\-\\->","mg");
+            }
+            open += "\r\n\r\n";
+            str = str.replace( regexp, open + map[key].join("\r\n\r\n") + "\r\n\r\n<!-- :mdpick -->");
+        }
+        return new Buffer(str);
+    }
     
-    mdpick.prototype._writeFile = function(){
+	/**
+	 * ピックアップされた Markdown のデータの構造を元に、出力先ファイルの記述に応じて Markdown 文字列を出力します.
+     * 
+     * @param dest      出力先ファイル
+     * @param result    ピックアップ結果
+     * @private
+     */
+    mdpick.prototype._writeFile = function( dest, result ){
         
-        if( this._output.length <= 1 ){
-            return;
+        if( typeof this.options.base === "undefined" ){
+            this.options.base = "README.md";
         }
         
-        // 出力内容があった場合に出力を行う.
+        var destString = "";
+        var destStringMap = { "":[] };
         
-        this._output.push("<!-- mdpick@ -->");
-        
-        var buffer;
-        
-        if( typeof this.options.base !== "undefined" ){
+        try{
             
-            if( this.options.verbose == true ){
-                logger.log( "Create " + this.options.out + " based on " + this.options.base );
-            }
+            destString = fs.readFileSync( path.resolve( ".", dest ) ).toString();
             
-            try{
-
-                var base = fs.readFileSync( path.resolve( ".", this.options.base ) );
-
-                var reg  = /<!\-+\s*@mdpick\s*\-+>(.|\n|\r)+<!\-+\s*mdpick@\s*\-+>/m;
-                var src  = base.toString();
-
-                if( src.match(reg) ){
-                    buffer = new Buffer( src.replace(reg,this._output.join("\n\n")) );
-                }else{
-                    buffer = new Buffer( src + "\n\n" + this._output.join("\n\n") );
-                }
-
-            }catch(e){
-
-                logger.error(e);
+            // --- 出力対象のファイル内に <!-- @mdpick --> があるかを調べる.
+            
+            var reg = /<!\-\-\smdpick\[?([\d\w\-._ /]*)\]?:\s\-\->((.|\r|\n)+?)<!\-\-\s:mdpick\s\-\->/mg;
+            var matches = destString.match(reg);
+            
+            if( matches ){
                 
-                buffer = new Buffer(this._output.join("\n\n"));
-
+                // --- <!-- @mdpick --> に [] でファイル指定があるかを調べる. あればそこはそのファイル or ディレクトリ以下を出力するように準備する. なければ 全てを <!-- @mdpick --> 内に書く
+                
+                var reg2 = /<!\-\-\smdpick\[?([\d\w\-._ /]*)\]?:\s\-\->/;
+                for( var i=0; i<matches.length; i++ ){
+                    var target = matches[i].match(reg2)[1];
+                    if( !destStringMap[target] ){
+                        destStringMap[target] = [];
+                    }
+                }
+                
+            }else{
+                
+                destString += "<!-- mdpick: -->\n\n<!-- :mdpick -->";
+                
             }
-
-        }else{
             
-            if( this.options.verbose == true ){
-                logger.log( "Create " + this.options.out );
-            }
-            
-            buffer = new Buffer(this._output.join("\r\n\r\n"));
-            
+        }catch(e){}
+        
+        if( destString == "" ) {
+            destString = "<!-- mdpick: -->\n\n<!-- :mdpick -->";
         }
         
-        // 出力ファイルを生成（新規ファイル生成にはgulp-utilのFileを利用する）
-        // TODO ファイルを生成するが independently の場合はsrc をそのまま返す.
+        var map = this._parseResult( result, destStringMap,[] );
+        console.log(map);
         
-        fs.writeFile( path.resolve( ".", this.options.out ), buffer.toString() );
+        var buffer = this._createBuffer( destString, map );
+        if( buffer ){
+            fs.writeFile( path.resolve( ".", dest ), buffer.toString() );
+        }
         
     }
     

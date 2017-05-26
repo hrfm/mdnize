@@ -7,13 +7,28 @@ const args = process.argv.slice(2);
 
 // ---------------------------------------------
 
-var targetDir = args[0];
-if( !targetDir || targetDir == ""){
-	targetDir = ".";
+var target = arg[0];
+if( !target || target == ""){
+	target = ".";
 }
 
-(new mdpick({
-	"base"          : "README.md",
-	"verbose"       : false,
+var dest = args[1];
+if( !dest || dest == ""){
+	dest = "README.md";
+}
+
+var options = {
+	"verbose" : false,
 	"writeFileName" : true
-})).pick( targetDir );
+};
+
+var i = 2;
+while( i < args.length ){
+	switch( args[i] ){
+		case "-v" :
+			options.verbose = true;
+			continue;
+	}
+}
+
+(new mdpick(options)).pick( target, dest );

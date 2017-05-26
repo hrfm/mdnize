@@ -1,10 +1,10 @@
 // --- using inline
-// @md ### this is a.php markdown
+// md: ### this is a.php markdown
 
 // --- using with comment out
-// @md
+// md:
 // - list1
 // - list2
 // 
 // **bold text**
-// @md
+// :md

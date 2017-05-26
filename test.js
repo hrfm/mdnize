@@ -1,10 +1,6 @@
-var MDPick = require('./index.js');
+var mdpick = require('./index.js');
 
-var md = new MDPick({
-    //"base"          : "README.md",
-    "out"           : "./test/README.md",
+(new mdpick({
     "verbose"       : true,
-    "writeFileName" : true
-});
-
-md.pick("test");
+    "writeFileName" : "#"
+})).pick("test","README.md");
