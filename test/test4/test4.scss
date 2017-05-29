@@ -1,6 +1,8 @@
 // --- using inline
 // md: ### this is b.scss markdown
 
+// md: ### test code
+
 // --- using with block comment
 /**
  * md:
@@ -16,3 +18,17 @@ md:
 **bold**
 :md
 */
+
+				/**
+				 * md:
+				 * - listA
+				 * - listB
+				 * **bold**
+				 * :md
+				 */
+
+// md:[scss]
+.test{
+	background: #fff;
+}
+// :md

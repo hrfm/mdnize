@@ -1,8 +1,8 @@
-var fs       = require('fs'),
-    path     = require('path'),
-    extend   = require('extend'),
-    Line     = require('./Line.js'),
-    Logger   = require('./Logger.js');
+var fs        = require('fs'),
+    path      = require('path'),
+    extend    = require('extend'),
+    uncomment = require('./uncomment.js'),
+    Logger    = require('./Logger.js');
 
 module.exports = (function(){
     
@@ -13,7 +13,7 @@ module.exports = (function(){
     
     // --------------------------------------------------------------------------------------
     // --- Module.
-
+    
 	/**
 	 * @class
      * @type {module.exports}
@@ -80,90 +80,67 @@ module.exports = (function(){
      */
     mdpick.prototype._readFile = function( uri ){
         
-        var filename  = uri.substr( uri.lastIndexOf("/")+1, uri.length );
+        var filename  = path.basename(uri);
+        var extension = path.extname(uri);
+        var basepath  = path.resolve(__dirname);
 
+        console.log(filename,extension,basepath);
+        
         // --- markdown ファイルは無視する.
-        var extension = filename.substr( filename.lastIndexOf(".")+1, filename.length );
-        if( extension.toLowerCase() == "md" ){
+        if( extension.toLowerCase() == ".md" ){
             return;
         }
-        
-        var basepath  = ( typeof this.options.base !== 'undefined' ) ? path.resolve('.',this.options.base) : path.resolve(__dirname);
-        basepath = basepath.substr(0,basepath.lastIndexOf('/'));
         
         // ------------------------------------------------------------------------
         // --- Check Process Start.
         
-        var picked = [];
-        var lines  = fs.readFileSync(uri,'utf8').toString().split(/\r?\n/);
+        var picked  = [];
+        var fileStr = fs.readFileSync(uri,'utf8').toString();
+        var lines   = fileStr.split(/\r?\n/);
         
         if( this.options.verbose == true ){
             logger.log( "[Processing] " + uri );
         }
         
-        // ファイルの読み込み.
+        var uncmt = uncomment(extension);
         
-        for( var i=0,len=lines.length; i<len; i++ ){
-
-            var r = new Line( lines[i], this.options.startSymbol, this.options.endSymbol, extension );
-
-            // マーカーの条件とマッチした場合.
-            if( r.isMatched() ){
-
-                var src = [], isEnd = false;
-
-                // 開始タグであった場合 pick を開始する.
-                if( r.isStart() ){
-
-                    // コードハイライト用の syntax 指定がある場合は開始文字列を追記.
-                    if( r.useSyntax() ) src.push("```"+ r.syntax);
-
-                    if( r.isInline() ){
-
-                        // inline 記述の場合は閉じタグを調べずその後に書かれたものを出力する.
-                        src.push(r.inline);
-
-                    }else{
-
-                        // それ以外の場合. isEnd == true になるまで行を処理しつづける.
-                        do{
-
-                            if( ++i == len ){
-
-                                // 最終行であった場合は終了.
-                                isEnd = true;
-
-                            }else{
-
-                                // 次の行を調べる.
-                                var r2 = new Line( lines[i], this.options.startSymbol, this.options.endSymbol, extension);
-
-                                if( r2.isStart() ){
-                                    // 開始タグ内に開始タグがある場合はエラー
-                                    logger.error("Can't use startSymbol during picking.");
-                                }else if( r2.isEnd() ){
-                                    // 閉じタグがある場合は終了
-                                    isEnd = true;
-                                }else{
-                                    // それ以外の場合はインデント等を消して出力に追加.
-                                    src.push(r.replace(lines[i]));
-                                }
-
-                            }
-
-                        }while( !isEnd );
-
-                    }
-
-                    // コードハイライト用の syntax 指定がある場合は終了文字列を追記.
-                    if( r.useSyntax() ) src.push("```");
-
+        var pattern = [
+            "^([ \\t]*"+uncmt+"[ \\t]*)",
+            this.options.startSymbol+"(?:\\[(\\w+)\\])?",
+            "(?:",
+                "[ \\t]*(.+?)$",
+            "|",
+                "\\r?\\n?((?:.|\\r|\\n)+?)\\r?\\n?^[ \\t]*"+uncmt+"[ \\t]*"+this.options.endSymbol,
+            ")"
+        ];
+        
+        var regexp = new RegExp( pattern.join(""), "gm" );
+        
+        var execResult;
+        while( execResult = regexp.exec(fileStr) ){
+            
+            console.log(execResult);
+            
+            var indents = execResult[1];
+            var syntax  = execResult[2];
+            var inline  = execResult[3];
+            var body    = execResult[4];
+            
+            var output = "";
+            if( inline ){
+                output = inline;
+            }else if( body ){
+                if( indents && indents != "" ){
+                    output += body.replace( new RegExp( "^" + indents.replace(/[\\^$.*+?()[\]{}|]/g,'\\$&'), "gm" ), "" );
+                }else{
+                    output += body;
                 }
-
-                picked.push( src.join("  \r\n") );
-
             }
-
+            if( syntax ){
+                output = "```" + syntax + "\n" + output + "\n```";
+            }
+            picked.push( output );
+            
         }
         
         // pick された行が1行以上ある場合に output に追加.
@@ -198,6 +175,11 @@ module.exports = (function(){
                 if( pattern != '' ){
                     regPattern = "^(\\.\\/)?" + pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                     if( new RegExp(regPattern).test(uri) ){
+                        
+                        if( this.options.verbose ){
+                            logger.log( regPattern + " -> " + uri );
+                        }
+                        
                         output = map[pattern];
                         break;
                     }
@@ -272,8 +254,12 @@ module.exports = (function(){
         }
         
         var destString = "";
-        var destStringMap = { "":[] };
-        
+        var destStringMap = { ".":[] };
+
+        console.log("result");
+        console.log(result);
+        console.log("--------------------------------------");
+
         try{
             
             destString = fs.readFileSync( path.resolve( ".", dest ) ).toString();
@@ -308,6 +294,10 @@ module.exports = (function(){
         }
         
         var buffer = this._createBuffer( destString, this._parseResult( result, destStringMap,[] ) );
+        
+        console.log( "destStringMap" );
+        console.log( destStringMap   );
+        
         if( buffer ){
             fs.writeFile( path.resolve( ".", dest ), buffer.toString() );
         }
