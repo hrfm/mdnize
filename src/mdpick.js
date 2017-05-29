@@ -84,7 +84,9 @@ module.exports = (function(){
         var extension = path.extname(uri);
         var basepath  = path.resolve(__dirname);
 
-        console.log(filename,extension,basepath);
+        //if( this.options.verbose ){
+        //    logger.log([filename,extension,basepath].join(" "));
+        //}
         
         // --- markdown ファイルは無視する.
         if( extension.toLowerCase() == ".md" ){
@@ -99,7 +101,7 @@ module.exports = (function(){
         var lines   = fileStr.split(/\r?\n/);
         
         if( this.options.verbose == true ){
-            logger.log( "[Processing] " + uri );
+            logger.log( "[Read] " + uri );
         }
         
         var uncmt = uncomment(extension);
@@ -110,7 +112,7 @@ module.exports = (function(){
             "(?:",
                 "[ \\t]*(.+?)$",
             "|",
-                "\\r?\\n?((?:.|\\r|\\n)+?)\\r?\\n?^[ \\t]*"+uncmt+"[ \\t]*"+this.options.endSymbol,
+                "[\\r\\n]((?:.|\\r|\\n)+?)^[ \\t]*"+uncmt+"[ \\t]*"+this.options.endSymbol,
             ")"
         ];
         
@@ -118,9 +120,7 @@ module.exports = (function(){
         
         var execResult;
         while( execResult = regexp.exec(fileStr) ){
-            
-            console.log(execResult);
-            
+
             var indents = execResult[1];
             var syntax  = execResult[2];
             var inline  = execResult[3];
@@ -141,14 +141,18 @@ module.exports = (function(){
             }
             picked.push( output );
             
+            if( this.options.verbose ) {
+                logger.log(output);
+            }
+
         }
         
         // pick された行が1行以上ある場合に output に追加.
-        if( 1 < picked.length ){
+        if( 0 < picked.length ){
             if( this.options.verbose == true ){
                 logger.log( "Pick from " + uri );
             }
-            return picked.join("\r\n\r\n");
+            return picked.join("\r\n");
         }
         
         return null;
@@ -254,10 +258,6 @@ module.exports = (function(){
         var destString = "";
         var destStringMap = { "":[] };
         
-        console.log("result");
-        console.log(result);
-        console.log("--------------------------------------");
-
         try{
             
             destString = fs.readFileSync( path.resolve( ".", dest ) ).toString();
@@ -291,7 +291,17 @@ module.exports = (function(){
             destString = "<!-- mdpick: -->\n\n<!-- :mdpick -->";
         }
         
-        var buffer = this._createBuffer( destString, this._parseResult( result, destStringMap,[] ) );
+        var parsedResult = this._parseResult( result, destStringMap,[] );
+        
+        if( this.options.verbose )
+        {
+            logger.log( "Start parse result object..." );
+            logger.log( result );
+            logger.log( "---------------" );
+            logger.log( parsedResult );
+        }
+        
+        var buffer = this._createBuffer( destString, parsedResult );
         if( buffer ){
             fs.writeFile( path.resolve( ".", dest ), buffer.toString() );
         }
