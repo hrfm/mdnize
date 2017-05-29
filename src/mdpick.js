@@ -175,11 +175,9 @@ module.exports = (function(){
                 if( pattern != '' ){
                     regPattern = "^(\\.\\/)?" + pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                     if( new RegExp(regPattern).test(uri) ){
-                        
                         if( this.options.verbose ){
                             logger.log( regPattern + " -> " + uri );
                         }
-                        
                         output = map[pattern];
                         break;
                     }
@@ -254,8 +252,8 @@ module.exports = (function(){
         }
         
         var destString = "";
-        var destStringMap = { ".":[] };
-
+        var destStringMap = { "":[] };
+        
         console.log("result");
         console.log(result);
         console.log("--------------------------------------");
@@ -294,10 +292,6 @@ module.exports = (function(){
         }
         
         var buffer = this._createBuffer( destString, this._parseResult( result, destStringMap,[] ) );
-        
-        console.log( "destStringMap" );
-        console.log( destStringMap   );
-        
         if( buffer ){
             fs.writeFile( path.resolve( ".", dest ), buffer.toString() );
         }
