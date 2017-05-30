@@ -1,1 +1,1 @@
-module.exports = require('./src/mdpick.js');
+module.exports = require('./src/mdnize.js');

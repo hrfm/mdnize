@@ -9,7 +9,7 @@ module.exports = (function(){
     // --------------------------------------------------------------------------------------
     // --- Log utils.
     
-    var logger = new Logger("mdpick");
+    var logger = new Logger("mdnize");
     
     // --------------------------------------------------------------------------------------
     // --- Module.
@@ -18,7 +18,7 @@ module.exports = (function(){
 	 * @class
      * @type {module.exports}
      */
-    var mdpick = module.exports = function( options ){
+    var mdnize = module.exports = function( options ){
         this.options = extend({
             "startSymbol"   : "md:",       // 開始文字列.
             "endSymbol"     : ":md",       // 終了文字列.
@@ -32,7 +32,7 @@ module.exports = (function(){
      * @param target    取得対象
      * @param dest      出力ファイル
      */
-    mdpick.prototype.pick = function( target, dest ){
+    mdnize.prototype.pick = function( target, dest ){
         var result = {};
         this._pick( target, ".", result );
         this._writeFile(dest,result);
@@ -49,7 +49,7 @@ module.exports = (function(){
      * @param obj       取得した内容を保存するための Object.
      * @private
      */
-    mdpick.prototype._pick = function( target, dir, obj ){
+    mdnize.prototype._pick = function( target, dir, obj ){
         
         var uri  = path.resolve( dir + "/" + target );
         
@@ -78,7 +78,7 @@ module.exports = (function(){
      * @returns {*}
      * @private
      */
-    mdpick.prototype._readFile = function( uri ){
+    mdnize.prototype._readFile = function( uri ){
         
         var filename  = path.basename(uri);
         var extension = path.extname(uri);
@@ -161,14 +161,14 @@ module.exports = (function(){
 
 	/**
 	 * 結果をパースして文字列化する処理です.
-     * @mdpick[xxx] の記述法を拡張するならここに記載する
+     * @mdnize[xxx] の記述法を拡張するならここに記載する
      * 
      * @param result
      * @param output
      * @returns {*}
      * @private
      */
-    mdpick.prototype._parseResult = function( result, map, nest ){
+    mdnize.prototype._parseResult = function( result, map, nest ){
         
         for( var key in result ){
             
@@ -212,29 +212,29 @@ module.exports = (function(){
     }
 
 	/**
-     * 第一引数で指定した文字列の中に記載されている <!-- mdpick --> を元に
+     * 第一引数で指定した文字列の中に記載されている <!-- mdnize --> を元に
      * 第二引数で指定したオブジェクトのキーと照らし合わせ, マッチしたものを置換します.
      * 
      * @param str
      * @param map
      * @private
      */
-    mdpick.prototype._createBuffer = function( str, map ){
+    mdnize.prototype._createBuffer = function( str, map ){
         
         for( var key in map ){
             
             var open, regexp;
             
             if( key == "" ){
-                open   = "<!-- mdpick: -->";
-                regexp = /<!\-\-\smdpick:\s\-\->((.|\r|\n)+?)<!\-\-\s:mdpick\s\-\->/mg;
+                open   = "<!-- mdnize: -->";
+                regexp = /<!\-\-\smdnize:\s\-\->((.|\r|\n)+?)<!\-\-\s:mdnize\s\-\->/mg;
             }else{
-                open   = "<!-- mdpick["+key+"]: -->";
-                regexp = new RegExp("<!\\-\\-\\smdpick\\["+key+"\\]:\\s\\-\\->((.|\\r|\\n)+?)<!\\-\\-\\s:mdpick\\s\\-\\->","mg");
+                open   = "<!-- mdnize["+key+"]: -->";
+                regexp = new RegExp("<!\\-\\-\\smdnize\\["+key+"\\]:\\s\\-\\->((.|\\r|\\n)+?)<!\\-\\-\\s:mdnize\\s\\-\\->","mg");
             }
             open += "\r\n\r\n";
             
-            str = str.replace( regexp, open + map[key].join("\r\n\r\n") + "\r\n\r\n<!-- :mdpick -->");
+            str = str.replace( regexp, open + map[key].join("\r\n\r\n") + "\r\n\r\n<!-- :mdnize -->");
             
         }
         
@@ -249,7 +249,7 @@ module.exports = (function(){
      * @param result    ピックアップ結果
      * @private
      */
-    mdpick.prototype._writeFile = function( dest, result ){
+    mdnize.prototype._writeFile = function( dest, result ){
         
         if( typeof this.options.base === "undefined" ){
             this.options.base = "README.md";
@@ -262,16 +262,16 @@ module.exports = (function(){
             
             destString = fs.readFileSync( path.resolve( ".", dest ) ).toString();
             
-            // --- 出力対象のファイル内に <!-- @mdpick --> があるかを調べる.
+            // --- 出力対象のファイル内に <!-- @mdnize --> があるかを調べる.
             
-            var reg = /<!\-\-\smdpick\[?([\d\w\-._ /]*)\]?:\s\-\->((.|\r|\n)+?)<!\-\-\s:mdpick\s\-\->/mg;
+            var reg = /<!\-\-\smdnize\[?([\d\w\-._ /]*)\]?:\s\-\->((.|\r|\n)+?)<!\-\-\s:mdnize\s\-\->/mg;
             var matches = destString.match(reg);
             
             if( matches ){
                 
-                // --- <!-- @mdpick --> に [] でファイル指定があるかを調べる. あればそこはそのファイル or ディレクトリ以下を出力するように準備する. なければ 全てを <!-- @mdpick --> 内に書く
+                // --- <!-- @mdnize --> に [] でファイル指定があるかを調べる. あればそこはそのファイル or ディレクトリ以下を出力するように準備する. なければ 全てを <!-- @mdnize --> 内に書く
                 
-                var reg2 = /<!\-\-\smdpick\[?([\d\w\-._ /]*)\]?:\s\-\->/;
+                var reg2 = /<!\-\-\smdnize\[?([\d\w\-._ /]*)\]?:\s\-\->/;
                 for( var i=0; i<matches.length; i++ ){
                     var target = matches[i].match(reg2)[1];
                     if( !destStringMap[target] ){
@@ -281,14 +281,14 @@ module.exports = (function(){
                 
             }else{
                 
-                destString += "<!-- mdpick: -->\n\n<!-- :mdpick -->";
+                destString += "<!-- mdnize: -->\n\n<!-- :mdnize -->";
                 
             }
             
         }catch(e){}
         
         if( destString == "" ) {
-            destString = "<!-- mdpick: -->\n\n<!-- :mdpick -->";
+            destString = "<!-- mdnize: -->\n\n<!-- :mdnize -->";
         }
         
         var parsedResult = this._parseResult( result, destStringMap,[] );
@@ -308,6 +308,6 @@ module.exports = (function(){
         
     }
     
-    return mdpick;
+    return mdnize;
     
 }).call(this);

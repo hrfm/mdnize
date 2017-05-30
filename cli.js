@@ -2,7 +2,7 @@
 
 'use strict';
 
-var mdpick = require('./src/mdpick.js');
+var mdnize = require('./src/mdnize.js');
 const args = process.argv.slice(2);
 
 // ---------------------------------------------
@@ -41,4 +41,4 @@ while( i < args.length ){
 	
 }
 
-(new mdpick(options)).pick( target, dest );
+(new mdnize(options)).pick( target, dest );

@@ -1,6 +1,6 @@
-var mdpick = require('./index.js');
+var mdnize = require('./index.js');
 
-(new mdpick({
+(new mdnize({
     "verbose"       : true,
     "writeFileName" : "#"
 })).pick(".","README.md");

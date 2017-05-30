@@ -1,6 +1,6 @@
 テスト
 
-<!-- mdpick[test/test2]: -->
+<!-- mdnize[test/test2]: -->
 
 # ./test/test2/test2.php
 
@@ -22,9 +22,9 @@ function(a,b){
 
 ```
 
-<!-- :mdpick -->
+<!-- :mdnize -->
 
-<!-- mdpick[./test/test4]: -->
+<!-- mdnize[./test/test4]: -->
 
 # ./test/test4/test4.scss
 
@@ -49,9 +49,9 @@ function(a,b){
 
 ```
 
-<!-- :mdpick -->
+<!-- :mdnize -->
 
-<!-- mdpick: -->
+<!-- mdnize: -->
 
 # ./test/a.php
 
@@ -94,4 +94,4 @@ function(a,b){
 
 ```
 
-<!-- :mdpick -->
+<!-- :mdnize -->
